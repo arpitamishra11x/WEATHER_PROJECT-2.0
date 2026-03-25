@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="SkyCast Elite - Production-grade hyper-local weather intelligence platform.">
+    <title>SkyCast Elite | Weather Intelligence</title>
+    
+    <!-- Google Fonts: Outfit & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Leaflet Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="css/main.css">
+</head>
+<body class="theme-dark">
+    <!-- Weather Background System -->
+    <div id="weather-ambient-system" class="ambient-layer">
+        <canvas id="weather-particles"></canvas>
+        <div class="sky-gradient"></div>
+        <div class="clouds-layer"></div>
+    </div>
+
+    <div class="app-shell">
+        <!-- NAVIGATION SIDEBAR -->
+        <aside class="sidebar-nav">
+            <div class="brand-logo">
+                <i data-lucide="cloud-lightning" class="brand-icon"></i>
+            </div>
+            
+            <nav class="nav-links">
+                <button class="nav-btn active" data-view="dashboard" title="Dashboard">
+                    <i data-lucide="layout-grid"></i>
+                </button>
+                
+                <div id="favorites-list" class="favorites-nav-group">
+                    <!-- Favorites injected here -->
+                </div>
+
+                <div class="nav-divider"></div>
+                
+                <button class="nav-btn" data-view="map" title="Interactive Map">
+                    <i data-lucide="map"></i>
+                </button>
+                <button class="nav-btn" data-view="locations" title="Saved Locations">
+                    <i data-lucide="navigation"></i>
+                </button>
+                <button class="nav-btn" data-view="analytics" title="Climate Analytics">
+                    <i data-lucide="bar-chart-3"></i>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <button class="nav-btn" title="Settings">
+                    <i data-lucide="settings"></i>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN LAYOUT -->
+        <main class="main-container">
+            
+            <!-- GLOBAL HEADER -->
+            <header class="glass-header">
+                <div class="search-experience">
+                    <div class="search-box">
+                        <i data-lucide="search" class="search-icon"></i>
+                        <input type="text" id="global-search" placeholder="Search cities (e.g. Tokyo, JP)..." autocomplete="off">
+                        <div id="search-autocomplete" class="dropdown-pane hidden"></div>
+                        
+                        <div class="search-actions">
+                            <span class="kb-shortcut">⌘K</span>
+                            <button id="voice-trigger" class="action-btn" title="Voice Search">
+                                <i data-lucide="mic"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="header-right">
+                    <button id="current-location-btn" class="action-btn" title="Your Location">
+                        <i data-lucide="crosshair"></i>
+                    </button>
+                    <div class="current-time-module">
+                        <span id="local-clock">00:00:00</span>
+                        <span id="local-date" class="text-dim">Monday, 23 March</span>
+                    </div>
+                    <button class="notification-btn">
+                        <i data-lucide="bell"></i>
+                        <span class="badge"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- DASHBOARD VIEW -->
+            <div id="view-dashboard" class="content-view active">
+                <div class="grid-layout">
+                    
+                    <!-- HERO WEATHER CARD -->
+                    <section class="hero-card card-glass">
+                        <div class="hero-content">
+                            <div class="location-metadata">
+                                <h1 id="city-name" class="skeleton-text">Detecting...</h1>
+                                <p id="weather-condition" class="skeleton-text"></p>
+                            </div>
+                            
+                            <div class="hero-temp-main">
+                                <span id="main-temp" class="skeleton-text">--°</span>
+                                <div class="temp-meta">
+                                    <span id="temp-high-low">H: -- L: --</span>
+                                    <span id="feels-like">Feels like --</span>
+                                </div>
+                            </div>
+
+                            <div class="ai-insights card-glass-dark">
+                                <div class="ai-header">
+                                    <i data-lucide="sparkles" size="14"></i>
+                                    <span>SKYCAST AI INSIGHT</span>
+                                </div>
+                                <p id="ai-insight-text">Analyzing atmospheric conditions to provide hyper-local recommendations...</p>
+                            </div>
+                        </div>
+
+                        <div class="hero-visual">
+                            <div id="main-weather-icon" class="dynamic-icon"></div>
+                        </div>
+                    </section>
+
+                    <!-- HOURLY FORECAST -->
+                    <section class="hourly-forecast card-glass">
+                        <h3 class="card-title">Hourly Forecast</h3>
+                        <div id="hourly-list" class="horizontal-scroll">
+                            <!-- Hourly items injected by JS -->
+                        </div>
+                    </section>
+
+                    <!-- DETAILED METRICS GRID -->
+                    <div class="metrics-grid">
+                        <div class="metric-card card-glass">
+                            <i data-lucide="thermometer" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">UV Index</p>
+                                <p id="uv-index" class="value">--</p>
+                                <p id="uv-level" class="sub-value">Low</p>
+                            </div>
+                        </div>
+                        <div class="metric-card card-glass">
+                            <i data-lucide="wind" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">Wind Status</p>
+                                <p id="wind-speed" class="value">-- km/h</p>
+                                <p id="wind-dir" class="sub-value">NW</p>
+                            </div>
+                        </div>
+                        <div class="metric-card card-glass">
+                            <i data-lucide="droplets" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">Humidity</p>
+                                <p id="humidity" class="value">-- %</p>
+                                <p id="dew-point" class="sub-value">The dew point is -- today.</p>
+                            </div>
+                        </div>
+                        <div class="metric-card card-glass">
+                            <i data-lucide="eye" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">Visibility</p>
+                                <p id="visibility" class="value">-- km</p>
+                                <p id="visibility-desc" class="sub-value">Clear air</p>
+                            </div>
+                        </div>
+                        <div class="metric-card card-glass">
+                            <i data-lucide="gauge" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">Air Quality</p>
+                                <p id="aqi-value" class="value">--</p>
+                                <p id="aqi-desc" class="sub-value">Good quality</p>
+                            </div>
+                        </div>
+                        <div class="metric-card card-glass">
+                            <i data-lucide="sunrise" class="metric-icon"></i>
+                            <div class="metric-val">
+                                <p class="label">Sun Schedule</p>
+                                <div class="sun-times">
+                                    <div class="sun-event">
+                                        <span class="text-dim">Rise:</span> <span id="sunrise-time">--:--</span>
+                                    </div>
+                                    <div class="sun-event">
+                                        <span class="text-dim">Set:</span> <span id="sunset-time">--:--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- INTERACTIVE MAP PREVIEW -->
+                    <section class="map-container card-glass">
+                        <div id="weather-map"></div>
+                        <div class="map-controls">
+                            <button class="map-layer-btn active" data-layer="temp">Temperature</button>
+                            <button class="map-layer-btn" data-layer="precip">Precipitation</button>
+                            <button class="map-layer-btn" data-layer="wind">Wind</button>
+                        </div>
+                    </section>
+
+                    <!-- 7-DAY FORECAST -->
+                    <section class="daily-forecast card-glass">
+                        <h3 class="card-title">7-Day Forecast</h3>
+                        <div id="daily-list" class="vertical-list">
+                            <!-- Daily items injected by JS -->
+                        </div>
+                    </section>
+
+                </div>
+            </div>
+
+            <!-- OTHER VIEWS (HIDDEN) -->
+            <div id="view-map" class="content-view">
+                <div id="full-map-container" class="card-glass full-view">
+                    <!-- Expanded Map injected here -->
+                </div>
+            </div>
+
+            <div id="view-locations" class="content-view">
+                <div class="view-header">
+                    <h2>Saved Locations</h2>
+                    <p class="text-dim">Monitor weather across your favorite global spots.</p>
+                </div>
+                <div id="locations-grid" class="locations-grid">
+                    <!-- Dynamic location cards -->
+                </div>
+            </div>
+
+            <div id="view-analytics" class="content-view">
+                <div class="view-header">
+                    <h2>Climate Analytics</h2>
+                    <p class="text-dim">Deep atmospheric trends and predictive insights.</p>
+                </div>
+                <div class="analytics-showcase card-glass">
+                    <div id="analytics-chart-container"></div>
+                    <div class="analytics-metrics-row">
+                        <!-- Mock stats -->
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-settings" class="content-view">
+                <div class="view-header">
+                    <h2>System Settings</h2>
+                </div>
+                <div class="settings-list card-glass">
+                    <div class="setting-item">
+                        <span>Temperature Units</span>
+                        <select id="setting-units" class="glass-select">
+                            <option value="metric">Celsius (°C)</option>
+                            <option value="imperial">Fahrenheit (°F)</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <span>Particle Density</span>
+                        <input type="range" id="setting-particles" min="0" max="200" value="100">
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- VOICE FEEDBACK OVERLAY -->
+    <div id="voice-overlay" class="hidden">
+        <div class="voice-wave-container">
+            <div class="wave"></div>
+            <div class="wave"></div>
+            <div class="wave"></div>
+        </div>
+        <p id="voice-status">Listening...</p>
+    </div>
+
+    <!-- CONFIG / SCRIPTS -->
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
